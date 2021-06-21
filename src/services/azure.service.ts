@@ -7,6 +7,6 @@ export abstract class AzureService {
     static async sentimentRequest(request:SentimentRequestModel) {
         const response:any = await BaseService.getInstance(SourceEnum.azure)!.post(
             "",request)
-        return response;
+        return response.data;
     }
 }

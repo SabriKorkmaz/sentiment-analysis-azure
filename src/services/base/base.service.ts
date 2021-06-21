@@ -18,10 +18,10 @@ export abstract class BaseService {
 
     static azure() {
         return axios.create({
-            baseURL: 'https://cemekmekcioglucognitiveservicesresource.cognitiveservices.azure.com/text/analytics/v3.1-preview.5/sentiment',
+            baseURL: 'https://cgservices.cognitiveservices.azure.com/text/analytics/v3.0/sentiment',
             timeout: 10000,
             headers: {
-                'Ocp-Apim-Subscription-Key': '4f15eefbd6d647a9936633b5578774f1',
+                'Ocp-Apim-Subscription-Key': '7521b416ec6d47148f1ddbf6429d28af',
                 'Content-Type': 'application/json',
                 'Accept':'application/json'
             }

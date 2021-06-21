@@ -10,4 +10,18 @@ export interface DocumentModel {
     language:string,
     text:string,
     title:string;
+    rating:number;
+}
+export interface DocumentResponseModel {
+    id:string
+    sentiment:string;
+    review:any;
+    rating:any;
+    confidenceScores:ConfidenceScoresModel
+}
+
+export interface ConfidenceScoresModel{
+    negative:number,
+    positive:number,
+    neutral:number,
 }
