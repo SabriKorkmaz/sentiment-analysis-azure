@@ -36,7 +36,7 @@ const options = {
         ],
     },
 };
-const bgColor = ['rgb(255, 99, 132)', 'rgb(0, 255, 0)', 'rgb(128, 255, 0)', 'rgb(0, 255, 255)', 'rgb(255, 255, 0)', 'rgb(255, 255, 128)']
+const bgColor = ['rgb(255, 99, 132)', 'rgb(0, 255, 0)', 'rgb(0, 72, 255)', 'rgb(0, 255, 255)', 'rgb(255, 255, 0)', 'rgb(255, 255, 128)']
 
 @observer
 export class Home extends React.Component<{}, IHomeState> {
@@ -374,15 +374,15 @@ export class Home extends React.Component<{}, IHomeState> {
                     </div>
                     <div style={{display: "flex", width: "50%", flexDirection: "column"}}>
 
-                        <TableList title={'Unexpected Negatives of '+ this.firstProduct.toUpperCase()} rows={this.state.outliers1.filter(k => k.rating == 5).slice(0,5)} />
-                        <TableList title={'Unexpected Positives of  '+ this.firstProduct.toUpperCase() } rows={this.state.outliers1.filter(k => k.rating == 1).slice(0,5)} />
-                        <TableList title={'Unexpected Negatives of  '+ this.secondProduct.toUpperCase()} rows={this.state.outliers2.filter(k => k.rating == 5).slice(0,5)} />
-                        <TableList title={'Unexpected Positives of  '+ this.secondProduct.toUpperCase()} rows={this.state.outliers2.filter(k => k.rating == 1).slice(0,5)} />
+                        <TableList title={'Highest Ratings-Negative Sentiment '+ this.firstProduct.toUpperCase()} rows={this.state.outliers1.filter(k => k.rating == 5).slice(0,5)} />
+                        <TableList title={'Lowest Rating-Positive Sentiment '+ this.firstProduct.toUpperCase() } rows={this.state.outliers1.filter(k => k.rating == 1).slice(0,5)} />
+                        <TableList title={'Highest Ratings-Negative Sentiment '+ this.secondProduct.toUpperCase()} rows={this.state.outliers2.filter(k => k.rating == 5).slice(0,5)} />
+                        <TableList title={'Lowest Rating-Positive Sentiment '+ this.secondProduct.toUpperCase()} rows={this.state.outliers2.filter(k => k.rating == 1).slice(0,5)} />
                         <br/>
-                        <TableList title={'Extreme reviews of '+ this.firstProduct.toUpperCase()} rows={this.state.extremePositive1} />
-                        <TableList title={'Extreme reviews of '+ this.firstProduct.toUpperCase() } rows={this.state.extremeNegative1} />
-                        <TableList title={'Extreme reviews of '+ this.secondProduct.toUpperCase()} rows={this.state.extremePositive2} />
-                        <TableList title={'Extreme reviews of '+ this.secondProduct.toUpperCase()} rows={this.state.extremeNegative2} />
+                        <TableList title={'Highest Positive Scores '+ this.firstProduct.toUpperCase()} rows={this.state.extremePositive1} />
+                        <TableList title={'Highest Negative Scores '+ this.firstProduct.toUpperCase() } rows={this.state.extremeNegative1} />
+                        <TableList title={'Highest Positive Scores '+ this.secondProduct.toUpperCase()} rows={this.state.extremePositive2} />
+                        <TableList title={'Highest Negative Scores '+ this.secondProduct.toUpperCase()} rows={this.state.extremeNegative2} />
                         {renderLoading()}
 
                     </div>
