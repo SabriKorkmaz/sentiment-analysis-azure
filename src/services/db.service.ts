@@ -19,7 +19,7 @@ export abstract class LocalService {
         let filtered =  data.filter((item)=>{
             return new Date(item.date) >= new Date(startDate) && new Date(item.date) <= new Date(endDate)
         })
-        return filtered.slice(0,50)
+        return filtered.slice(0,250);
 
     }
 }

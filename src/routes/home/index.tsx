@@ -19,11 +19,9 @@ import FormControl from '@material-ui/core/FormControl';
 import {LocalService} from "../../services/db.service";
 import {LocalModel} from "../../interface/local/local.interface";
 import {TableList} from "../../components/table";
+import {BaseMapper} from "../../mapper/base.mapper";
 
-const data = {
-    labels: ['', ''],
-    datasets: [],
-} as any;
+
 
 const options = {
     scales: {
@@ -105,10 +103,17 @@ export class Home extends React.Component<{}, IHomeState> {
     async getKeywords() {
         this.setState({
             isReady: false,
-            data: data,
+            data: {
+                datasets:[],
+                labels:[]
+            },
             isLoading: true,
         })
         let labels: string[] = []
+        const data = {
+            labels: ['', ''],
+            datasets: [],
+        } as any;
         let keyword1 = this.firstProduct + "_" + this.firstActiveRegion
         let keyword2 = this.secondProduct + "_" + this.secondActiveRegion;
         let startDate = mainStore.getSelectionRange.startDate
@@ -120,124 +125,76 @@ export class Home extends React.Component<{}, IHomeState> {
         if (secondProductReviews == null) {
             return
         }
-        let documentModel: DocumentModel[] = secondProductReviews.map((item: LocalModel) => {
-            return {
-                id: this.secondProduct + "_" + item.id,
-                language: "en",
-                title: item.title,
-                text: item.review,
-                rating: item.rating
-            } as DocumentModel
-        })
-        try{
-
-        let graphData2: DocumentResponseModel[] = []
-        let loopCount = Math.floor(documentModel.length / 10)
-        for (let i = 0; i < loopCount; i++) {
-            let slicedData = documentModel.slice(i * 10, (i + 1) * 10);
-            let result2 = await AzureService.sentimentRequest({
-                documents: slicedData
-            })
-            result2.documents.forEach(k => {
-                let item = slicedData.find(z => z.id == k.id)
-                if (item) {
-                    graphData2.push({
-                        id: k.id,
-                        review: item.text,
-                        rating: item.rating,
-                        confidenceScores: k.confidenceScores,
-                        sentiment: k.sentiment
-                    })
-                }
-
-            })
-        }
-
         if (firstProductReviews == null) {
             return;
         }
-        let documentModel2: DocumentModel[] = firstProductReviews.map((item: LocalModel) => {
-            return {
-                id: this.firstProduct + "_" + item.id,
-                language: "en",
-                title: item.title,
-                text: item.review,
-                rating: item.rating,
-            } as DocumentModel
-        })
-        let loopCount2 = Math.floor(documentModel2.length / 10)
+        try {
+            let documentModel: DocumentModel[] = BaseMapper.mapFromReviewToDocument(secondProductReviews, this.secondProduct)
 
-        let graphData1: DocumentResponseModel[] = [];
+            let graphData2: DocumentResponseModel[] = await BaseMapper.mapToGraphData(documentModel);
 
-        for (let i = 0; i < loopCount2; i++) {
-            let slicedData = documentModel2.slice(i * 10, (i + 1) * 10);
-            let result1 = await AzureService.sentimentRequest({
-                documents: slicedData
-            })
-            result1.documents.forEach(k => {
-                let item = slicedData.find(z => k.id == z.id);
-                if (item) {
-                    graphData1.push({
-                        id: k.id,
-                        review: item.text as any,
-                        rating: item.rating as any,
-                        confidenceScores: k.confidenceScores,
-                        sentiment: k.sentiment
-                    })
+
+            let documentModel2: DocumentModel[] = BaseMapper.mapFromReviewToDocument(firstProductReviews, this.firstProduct)
+
+
+            let graphData1: DocumentResponseModel[] = await BaseMapper.mapToGraphData(documentModel2);
+
+            //How many types of the result / positives,negatives and mixed
+            graphData1.forEach((item: DocumentResponseModel) => {
+                if (!labels.includes(item.sentiment)) {
+                    labels.push(item.sentiment)
                 }
-
             })
-        }
 
-        graphData1.forEach((item: DocumentResponseModel) => {
-            if (!labels.includes(item.sentiment)) {
-                labels.push(item.sentiment)
-            }
-        })
-
-        labels.forEach((item, index) => {
-            data.datasets.push({
-                label: item,
-                backgroundColor: bgColor[index],
-                borderColor: bgColor[index],
-                data: [graphData1.filter(k => k.sentiment == item).length, graphData2.filter(k => k.sentiment == item).length] as number[],
+            //We need to push the data we calculated to dataset to show graph
+            labels.forEach((item, index) => {
+                data.datasets.push({
+                    label: item,
+                    backgroundColor: bgColor[index],
+                    borderColor: bgColor[index],
+                    data: [graphData1.filter(k => k.sentiment == item).length, graphData2.filter(k => k.sentiment == item).length] as number[],
+                })
             })
-        })
-        let outliers1 = graphData1.filter((item) => {
-            return (item.rating == 5 && item.confidenceScores.negative > 0.7) || (item.rating == 1 && item.confidenceScores.positive > 0.7)
-        })
-        let outliers2 = graphData2.filter((item) => {
-            return (item.rating == 5 && item.confidenceScores.negative > 0.7) || (item.rating == 1 && item.confidenceScores.positive > 0.7)
-        })
-        let extremesPositive1 = graphData1.sort((a, b) =>
-            b.confidenceScores.positive-a.confidenceScores.positive).slice(0,5)
-        let extremesPositive2 = graphData2.sort((a, b) =>
-            b.confidenceScores.positive-a.confidenceScores.positive).slice(0,5)
-        let extremesNegative1 = graphData1.sort((a, b) =>
-            b.confidenceScores.negative-a.confidenceScores.negative).slice(0,5)
-        let extremesNegative2 = graphData2.sort((a, b) =>
-            b.confidenceScores.negative-a.confidenceScores.negative).slice(0,5)
-        this.setState({
-            isReady: true,
-            isLoading: false,
-            firstNegativeProductMean: graphData1.map(l => l.confidenceScores.negative).reduce((a, b) => a + b, 0) / graphData1.length,
-            firstPositiveProductMean: graphData1.map(l => l.confidenceScores.positive).reduce((a, b) => a + b, 0) / graphData1.length,
-            firstNeutralProductMean: graphData1.map(l => l.confidenceScores.neutral).reduce((a, b) => a + b, 0) / graphData1.length,
-            secondNegativeProductMean: graphData2.map(l => l.confidenceScores.negative).reduce((a, b) => a + b, 0) / graphData2.length,
-            secondPositiveProductMean: graphData2.map(l => l.confidenceScores.positive).reduce((a, b) => a + b, 0) / graphData2.length,
-            secondNeutralProductMean: graphData2.map(l => l.confidenceScores.neutral).reduce((a, b) => a + b, 0) / graphData2.length,
-            data: {
-                labels: [mainStore.getFirstProduct.toUpperCase(), mainStore.getSecondProduct.toUpperCase()],
-                datasets: data.datasets
-            },
-            outliers1: outliers1,
-            outliers2: outliers2,
-            extremePositive1: extremesPositive1,
-            extremePositive2: extremesPositive2,
-            extremeNegative1:extremesNegative1,
-            extremeNegative2:extremesNegative2
-        })
-        }catch (e) {
+
+            //preparing the data of the tables
+            let outliers1 = graphData1.filter((item) => {
+                return (item.rating == 5 && item.confidenceScores.negative > 0.7) || (item.rating == 1 && item.confidenceScores.positive > 0.7)
+            })
+            let outliers2 = graphData2.filter((item) => {
+                return (item.rating == 5 && item.confidenceScores.negative > 0.7) || (item.rating == 1 && item.confidenceScores.positive > 0.7)
+            })
+            let extremesPositive1 = graphData1.sort((a, b) =>
+                b.confidenceScores.positive - a.confidenceScores.positive).slice(0, 5)
+            let extremesPositive2 = graphData2.sort((a, b) =>
+                b.confidenceScores.positive - a.confidenceScores.positive).slice(0, 5)
+            let extremesNegative1 = graphData1.sort((a, b) =>
+                b.confidenceScores.negative - a.confidenceScores.negative).slice(0, 5)
+            let extremesNegative2 = graphData2.sort((a, b) =>
+                b.confidenceScores.negative - a.confidenceScores.negative).slice(0, 5)
+
+            //preparing the last state of the page
+            this.setState({
+                isReady: true,
+                isLoading: false,
+                firstNegativeProductMean: graphData1.map(l => l.confidenceScores.negative).reduce((a, b) => a + b, 0) / graphData1.length,
+                firstPositiveProductMean: graphData1.map(l => l.confidenceScores.positive).reduce((a, b) => a + b, 0) / graphData1.length,
+                firstNeutralProductMean: graphData1.map(l => l.confidenceScores.neutral).reduce((a, b) => a + b, 0) / graphData1.length,
+                secondNegativeProductMean: graphData2.map(l => l.confidenceScores.negative).reduce((a, b) => a + b, 0) / graphData2.length,
+                secondPositiveProductMean: graphData2.map(l => l.confidenceScores.positive).reduce((a, b) => a + b, 0) / graphData2.length,
+                secondNeutralProductMean: graphData2.map(l => l.confidenceScores.neutral).reduce((a, b) => a + b, 0) / graphData2.length,
+                data: {
+                    labels: [mainStore.getFirstProduct.toUpperCase(), mainStore.getSecondProduct.toUpperCase()],
+                    datasets: data.datasets
+                },
+                outliers1: outliers1,
+                outliers2: outliers2,
+                extremePositive1: extremesPositive1,
+                extremePositive2: extremesPositive2,
+                extremeNegative1: extremesNegative1,
+                extremeNegative2: extremesNegative2
+            })
+
+        } catch (e) {
             alert(e)
         }
 
@@ -374,15 +331,23 @@ export class Home extends React.Component<{}, IHomeState> {
                     </div>
                     <div style={{display: "flex", width: "50%", flexDirection: "column"}}>
 
-                        <TableList title={'Highest Ratings-Negative Sentiment '+ this.firstProduct.toUpperCase()} rows={this.state.outliers1.filter(k => k.rating == 5).slice(0,5)} />
-                        <TableList title={'Lowest Rating-Positive Sentiment '+ this.firstProduct.toUpperCase() } rows={this.state.outliers1.filter(k => k.rating == 1).slice(0,5)} />
-                        <TableList title={'Highest Ratings-Negative Sentiment '+ this.secondProduct.toUpperCase()} rows={this.state.outliers2.filter(k => k.rating == 5).slice(0,5)} />
-                        <TableList title={'Lowest Rating-Positive Sentiment '+ this.secondProduct.toUpperCase()} rows={this.state.outliers2.filter(k => k.rating == 1).slice(0,5)} />
+                        <TableList title={'Highest Ratings-Negative Sentiment ' + this.firstProduct.toUpperCase()}
+                                   rows={this.state.outliers1.filter(k => k.rating == 5).slice(0, 5)}/>
+                        <TableList title={'Lowest Rating-Positive Sentiment ' + this.firstProduct.toUpperCase()}
+                                   rows={this.state.outliers1.filter(k => k.rating == 1).slice(0, 5)}/>
+                        <TableList title={'Highest Ratings-Negative Sentiment ' + this.secondProduct.toUpperCase()}
+                                   rows={this.state.outliers2.filter(k => k.rating == 5).slice(0, 5)}/>
+                        <TableList title={'Lowest Rating-Positive Sentiment ' + this.secondProduct.toUpperCase()}
+                                   rows={this.state.outliers2.filter(k => k.rating == 1).slice(0, 5)}/>
                         <br/>
-                        <TableList title={'Highest Positive Scores '+ this.firstProduct.toUpperCase()} rows={this.state.extremePositive1} />
-                        <TableList title={'Highest Negative Scores '+ this.firstProduct.toUpperCase() } rows={this.state.extremeNegative1} />
-                        <TableList title={'Highest Positive Scores '+ this.secondProduct.toUpperCase()} rows={this.state.extremePositive2} />
-                        <TableList title={'Highest Negative Scores '+ this.secondProduct.toUpperCase()} rows={this.state.extremeNegative2} />
+                        <TableList title={'Highest Positive Scores ' + this.firstProduct.toUpperCase()}
+                                   rows={this.state.extremePositive1}/>
+                        <TableList title={'Highest Negative Scores ' + this.firstProduct.toUpperCase()}
+                                   rows={this.state.extremeNegative1}/>
+                        <TableList title={'Highest Positive Scores ' + this.secondProduct.toUpperCase()}
+                                   rows={this.state.extremePositive2}/>
+                        <TableList title={'Highest Negative Scores ' + this.secondProduct.toUpperCase()}
+                                   rows={this.state.extremeNegative2}/>
                         {renderLoading()}
 
                     </div>
