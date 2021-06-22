@@ -10,7 +10,7 @@ export abstract class BaseService {
             baseURL: 'https://app-stores.p.rapidapi.com',
             timeout: 10000,
             headers: {
-                'x-rapidapi-key': 'b2f817b3d4msh51085edfd7896f5p146ee0jsnf6cffe263c32',
+                'x-rapidapi-key': '**************************************',
                 'x-rapidapi-host': 'app-stores.p.rapidapi.com',
             }
         })
