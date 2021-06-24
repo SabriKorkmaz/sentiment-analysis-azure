@@ -21,7 +21,7 @@ export abstract class BaseService {
             baseURL: 'https://cgservices.cognitiveservices.azure.com/text/analytics/v3.0/sentiment',
             timeout: 10000,
             headers: {
-                'Ocp-Apim-Subscription-Key': '7521b416ec6d47148f1ddbf6429d28af',
+                'Ocp-Apim-Subscription-Key': '*******************************',
                 'Content-Type': 'application/json',
                 'Accept':'application/json'
             }
